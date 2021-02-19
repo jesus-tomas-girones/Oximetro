@@ -1,1 +1,2 @@
 include ':app', ':FastBleLib'
+rootProject.name = "Oximetro"
