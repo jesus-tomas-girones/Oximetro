@@ -1,5 +1,13 @@
 ![效果图](https://github.com/Jasonchenlijian/FastBle/raw/master/preview/fastble_poster.png)
 
+Esta aplicación es un fork de https://github.com/Jasonchenlijian/FastBle.
+
+Ha sido adaptada para extraer datos de un Oximetro BLE.
+
+Más info: https://github.com/jesus-tomas-girones/oximeter-reverse-engineering
+
+________________________
+
 Thanks to the logo designed by [anharismail](https://github.com/anharismail)
 
 
