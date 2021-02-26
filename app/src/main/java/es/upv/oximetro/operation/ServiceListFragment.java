@@ -36,6 +36,22 @@ public class ServiceListFragment extends Fragment {
         return v;
     }
 
+    //TODO: * Seleccionar automáticamente el tercer servicio
+
+    @Override    //////////////////////////////
+    public void onResume() {
+        super.onResume();
+        BleDevice bleDevice = ((OperationActivity) getActivity()).getBleDevice();
+        BluetoothGatt gatt = BleManager.getInstance().getBluetoothGatt(bleDevice);
+        for (BluetoothGattService service : gatt.getServices()) {
+            String uuid = service.getUuid().toString();
+            if (uuid.equals("0000fff0-0000-1000-8000-00805f9b34fb")){
+                ((OperationActivity) getActivity()).setBluetoothGattService(service);
+                ((OperationActivity) getActivity()).changePage(1);
+            }
+        }
+    }
+
     private void initView(View v) {
         txt_name = (TextView) v.findViewById(R.id.txt_name);
         txt_mac = (TextView) v.findViewById(R.id.txt_mac);
@@ -65,6 +81,12 @@ public class ServiceListFragment extends Fragment {
         mResultAdapter.clear();
         for (BluetoothGattService service : gatt.getServices()) {
             mResultAdapter.addResult(service);
+
+         /*   String uuid = service.getUuid().toString();
+            if (uuid.equals("0000fff0-0000-1000-8000-00805f9b34fb")){
+                ((OperationActivity) getActivity()).setBluetoothGattService(service);
+                ((OperationActivity) getActivity()).changePage(1);
+            }*/
         }
         mResultAdapter.notifyDataSetChanged();
     }

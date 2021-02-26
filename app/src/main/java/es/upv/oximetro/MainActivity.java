@@ -51,6 +51,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+// Lista de tareas por realizar a nivel de aplicación
+
+//DONE: Pedir permiso almacenamiento
+//DONE: Aplicación siepre en vertical
+//DONE: Solo se muestran los dispositivos con nombre "HJ-Narigmed"
+//DONE: Se salta la solicitud de servicio y característica dejando valores fijos
+//TODO: Los dispositivos se conectan de forma automática
+//TODO: Quitar botón de CONECTAR y dejar solo ENTRAR
+//TODO: Eliminar opciones de búsqueda
+//TODO: Comenzar buscando al entrar en MainActivity
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -160,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
 
-            @Override
+            @Override    // Entramos en el dispositivo
             public void onDetail(BleDevice bleDevice) {
                 if (BleManager.getInstance().isConnected(bleDevice)) {
                     Intent intent = new Intent(MainActivity.this, OperationActivity.class);
@@ -217,11 +227,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         boolean isAutoConnect = sw_auto.isChecked();
 
         BleScanRuleConfig scanRuleConfig = new BleScanRuleConfig.Builder()
-                .setServiceUuids(serviceUuids)      // 只扫描指定的服务的设备，可选
-                .setDeviceName(true, names)   // 只扫描指定广播名的设备，可选
-                .setDeviceMac(mac)                  // 只扫描指定mac的设备，可选
-                .setAutoConnect(isAutoConnect)      // 连接时的autoConnect参数，可选，默认false
-                .setScanTimeOut(10000)              // 扫描超时时间，可选，默认10秒
+                .setServiceUuids(serviceUuids)
+                .setDeviceName(true, names)
+                .setDeviceMac(mac)
+                .setAutoConnect(isAutoConnect)
+                .setScanTimeOut(10000)
                 .build();
         BleManager.getInstance().initScanRule(scanRuleConfig);
     }
@@ -244,8 +254,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onScanning(BleDevice bleDevice) {
-                mDeviceAdapter.addDevice(bleDevice);
-                mDeviceAdapter.notifyDataSetChanged();
+                if (bleDevice!=null && "HJ-Narigmed".equals(bleDevice.getName())) {  /////////////////////
+                    mDeviceAdapter.addDevice(bleDevice);
+                    mDeviceAdapter.notifyDataSetChanged();
+                }                                                 ////////////////////////
             }
 
             @Override
@@ -351,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
-        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE};
         List<String> permissionDeniedList = new ArrayList<>();
         for (String permission : permissions) {
             int permissionCheck = ContextCompat.checkSelfPermission(this, permission);

@@ -2,6 +2,7 @@ package es.upv.oximetro.operation;
 
 
 import android.annotation.TargetApi;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
@@ -19,6 +20,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import es.upv.fastble.BleManager;
+import es.upv.fastble.data.BleDevice;
 import es.upv.oximetro.R;
 
 import java.util.ArrayList;
@@ -87,6 +90,23 @@ public class CharacteristicListFragment extends Fragment {
                 }
             }
         });
+    }
+
+    //TODO: * Seleccionar automáticamente la segunda caracteristica con NOTIFY
+
+    @Override    //////////////////////////////
+    public void onResume() {
+        super.onResume();
+        BluetoothGattService service = ((OperationActivity) getActivity()).getBluetoothGattService();
+        for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+
+            String uuid = characteristic.getUuid().toString();
+            if (uuid.equals("0000fff1-0000-1000-8000-00805f9b34fb")){
+                ((OperationActivity) getActivity()).setCharacteristic(characteristic);
+                ((OperationActivity) getActivity()).setCharaProp(CharacteristicOperationFragment.PROPERTY_NOTIFY);
+                ((OperationActivity) getActivity()).changePage(2);
+            }
+        }
     }
 
     public void showData() {

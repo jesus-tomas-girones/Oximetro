@@ -1,6 +1,5 @@
 package es.upv.oximetro.operation;
 
-
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.os.Bundle;
