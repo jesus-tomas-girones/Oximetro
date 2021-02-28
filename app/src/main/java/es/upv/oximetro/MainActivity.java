@@ -9,8 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.DashPathEffect;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,12 +27,6 @@ import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -64,10 +56,10 @@ import java.util.UUID;
 //DONE: Aplicación siepre en vertical
 //DONE: Solo se muestran los dispositivos con nombre "HJ-Narigmed"
 //DONE: Se salta la solicitud de servicio y característica dejando valores fijos
-//TODO: Los dispositivos se conectan de forma automática
-//TODO: Quitar botón de CONECTAR y dejar solo ENTRAR
+//DONE: Comenzar buscando al entrar en MainActivity
+//DONE: Entrar en ShowDataAcivity tras conectan de forma automática
+//TODO: Quitar botón de CONECTAR, ENTRAR, BUSCAR
 //TODO: Eliminar opciones de búsqueda
-//TODO: Comenzar buscando al entrar en MainActivity
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -90,17 +82,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         initView();
-
         BleManager.getInstance().init(getApplication());
         BleManager.getInstance()
                 .enableLog(true)
                 .setReConnectCount(1, 5000)
                 .setConnectOverTime(20000)
                 .setOperateTimeout(5000);
+        //Comenzamos escaneando dispositivos
+        checkPermissionsAndConnect();
     }
-
 
     @Override
     protected void onResume() {
@@ -120,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btn_scan:
                 if (btn_scan.getText().equals(getString(R.string.start_scan))) {
-                    checkPermissions();
+                    checkPermissionsAndConnect();
                 } else if (btn_scan.getText().equals(getString(R.string.stop_scan))) {
                     BleManager.getInstance().cancelScan();
                 }
@@ -182,16 +173,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override    // Entramos en el dispositivo
             public void onDetail(BleDevice bleDevice) {
-                if (BleManager.getInstance().isConnected(bleDevice)) {
-                    Intent intent = new Intent(MainActivity.this, //*OperationActivity.class);
-                            ShowDataActivity.class);
-                    intent.putExtra(OperationActivity.KEY_DATA, bleDevice);
-                    startActivity(intent);
-                }
+                goShowDataActivity(bleDevice);
             }
         });
         ListView listView_device = (ListView) findViewById(R.id.list_device);
         listView_device.setAdapter(mDeviceAdapter);
+    }
+
+    private void goShowDataActivity(BleDevice bleDevice) {
+        if (BleManager.getInstance().isConnected(bleDevice)) {
+            Intent intent = new Intent(MainActivity.this, //*OperationActivity.class);
+                    ShowDataActivity.class);
+            intent.putExtra(OperationActivity.KEY_DATA, bleDevice);
+            startActivity(intent);
+        }
     }
 
     private void showConnectedDevice() {
@@ -232,11 +227,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             names = str_name.split(",");
         }
-
         String mac = et_mac.getText().toString();
-
         boolean isAutoConnect = sw_auto.isChecked();
-
         BleScanRuleConfig scanRuleConfig = new BleScanRuleConfig.Builder()
                 .setServiceUuids(serviceUuids)
                 .setDeviceName(true, names)
@@ -301,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 progressDialog.dismiss();
                 mDeviceAdapter.addDevice(bleDevice);
                 mDeviceAdapter.notifyDataSetChanged();
+                goShowDataActivity(bleDevice);
             }
 
             @Override
@@ -367,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void checkPermissions() {
+    private void checkPermissionsAndConnect() {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!bluetoothAdapter.isEnabled()) {
             Toast.makeText(this, getString(R.string.please_open_blue), Toast.LENGTH_LONG).show();

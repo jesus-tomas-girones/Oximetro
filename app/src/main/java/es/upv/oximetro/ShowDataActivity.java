@@ -33,6 +33,9 @@ import es.upv.oximetro.operation.CharacteristicOperationFragment;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.copyOfRange;
 
+//TODO: Añadir botón para grabar datos
+//TODO: Añadir ToolBar
+
 public class ShowDataActivity extends AppCompatActivity {
 
    private static final String TAG = MainActivity.class.getSimpleName();
@@ -61,11 +64,10 @@ public class ShowDataActivity extends AppCompatActivity {
    //La gráfica se representa en dos partes, la izq. y la der.
    //(entriesLeft y entriesRight)
 
-   public static final int SHOW_TIME = 5000;  // Tiempo a mostrar en la gráfica (mseg)
+   public static final int SHOW_TIME = 5000;   // Tiempo a mostrar en la gráfica (mseg)
    public static final int SAMPLE_PERIOD = 22; // Cada cuantos mseg llega una muestra
    public static final int SAMPLES_IN_GRAPH = SHOW_TIME / SAMPLE_PERIOD;
                                                // # de muestras en la gráfiva (227)
-
    List<Entry> entriesLeft = new ArrayList<>();
    List<Entry> entriesRight = new ArrayList<>();
    long startTime = System.currentTimeMillis();
