@@ -60,6 +60,7 @@ import java.util.UUID;
 //DONE: Entrar en ShowDataAcivity tras conectan de forma automática
 //TODO: Quitar botón de CONECTAR, ENTRAR, BUSCAR
 //TODO: Eliminar opciones de búsqueda
+//TODO: Eliminar subpaquete operation
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 

@@ -6,7 +6,10 @@ import android.bluetooth.BluetoothGattService;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -33,7 +36,7 @@ import es.upv.oximetro.operation.CharacteristicOperationFragment;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.copyOfRange;
 
-//TODO: Añadir botón para grabar datos
+//DONE: Añadir botón para grabar datos
 //TODO: Añadir ToolBar
 
 public class ShowDataActivity extends AppCompatActivity {
@@ -45,7 +48,7 @@ public class ShowDataActivity extends AppCompatActivity {
    private BluetoothGattService bluetoothGattService;
    private BluetoothGattCharacteristic characteristic;
 
-   private TextView tv_spo2, tv_pr, tv_rr, tv_pi, tv_log;
+   private TextView tv_spo2, tv_pr, tv_rr, tv_pi;
    private LineChart chart;
 
    @Override
@@ -54,7 +57,6 @@ public class ShowDataActivity extends AppCompatActivity {
       setContentView(R.layout.activity_show_data);
       initView();
       prepareDeviceServiceCharact();
-      showChart();
    }
 
    //Variables globales para representar la gráfica
@@ -67,7 +69,7 @@ public class ShowDataActivity extends AppCompatActivity {
    public static final int SHOW_TIME = 5000;   // Tiempo a mostrar en la gráfica (mseg)
    public static final int SAMPLE_PERIOD = 22; // Cada cuantos mseg llega una muestra
    public static final int SAMPLES_IN_GRAPH = SHOW_TIME / SAMPLE_PERIOD;
-                                               // # de muestras en la gráfiva (227)
+   // # de muestras en la gráfiva (227)
    List<Entry> entriesLeft = new ArrayList<>();
    List<Entry> entriesRight = new ArrayList<>();
    long startTime = System.currentTimeMillis();
@@ -91,15 +93,15 @@ public class ShowDataActivity extends AppCompatActivity {
       long relativeTime = time % SHOW_TIME; //Se representa el módulo 5000 del tiempo
       //Cuando nos salimos por la derecha ...
       //(Lo sabemos porque el módulo del tiempo < que el último añadido)
-      if (entriesLeft.size()>0 &&
-          relativeTime < entriesLeft.get(entriesLeft.size()-1).getX()) {
+      if (entriesLeft.size() > 0 &&
+              relativeTime < entriesLeft.get(entriesLeft.size() - 1).getX()) {
          //Intercambiamos parte derecha y parte izquierda
          List<Entry> temp = entriesRight;
          entriesRight = entriesLeft;
          entriesLeft = temp;
       }
       //El nuevo dato se añade al final de la parte izq
-      entriesLeft.add(new Entry(relativeTime,value));
+      entriesLeft.add(new Entry(relativeTime, value));
       //TODO: Eliminar SAMPLES_IN_GRAPH y dejar un espacio constante de tiempo entre la parte izq. y der.
       //Eliminamos muestras (normalmente de la parte rerecha)
       //de forma que el número total de muestras se mantenga constante en SAMPLES_IN_GRAPH
@@ -123,7 +125,6 @@ public class ShowDataActivity extends AppCompatActivity {
       tv_pr = (TextView) findViewById(R.id.tv_pr);
       tv_rr = (TextView) findViewById(R.id.tv_rr);
       tv_pi = (TextView) findViewById(R.id.tv_pi);
-      tv_log = (TextView) findViewById(R.id.tv_log);
       //GRÁFICA
       chart = (LineChart) findViewById(R.id.chart_heart);
       XAxis xAxis = chart.getXAxis();
@@ -171,54 +172,67 @@ public class ShowDataActivity extends AppCompatActivity {
               characteristic.getService().getUuid().toString(),
               characteristic.getUuid().toString(),
               new BleNotifyCallback() {
-
                  @Override
                  public void onNotifySuccess() {
-                    runOnUiThread(new Runnable() {
-                       @Override
-                       public void run() {
-                          addText(tv_log, "notify success");
-                       }
-                    });
                  }
 
                  @Override
                  public void onNotifyFailure(final BleException exception) {
-                    runOnUiThread(new Runnable() {
-                       @Override
-                       public void run() {
-                          addText(tv_log, exception.toString());
-                       }
-                    });
+                    Log.e(TAG, exception.toString());
                  }
 
                  @Override
                  public void onCharacteristicChanged(byte[] data) {
-                    writeFrames(data);
-                    runOnUiThread(new Runnable() {
-                       @Override
-                       public void run() {
-                          addText(tv_log, HexUtil.formatHexString(characteristic.getValue(), true));
-                          Log.d("LLL", System.currentTimeMillis() + "; " + HexUtil.formatHexString(characteristic.getValue(), true));
-                       }
-                    });
+                    //Log.d(TAG, System.currentTimeMillis() + "; " + HexUtil.formatHexString(characteristic.getValue(), true));
+                   writeFrames(data);
                  }
               });
    }
 
-   private void addText(TextView textView, String content) {
+/*   private void addText(TextView textView, String content) {
       textView.append(content);
       textView.append("\n");
       int offset = textView.getLineCount() * textView.getLineHeight();
       if (offset > textView.getHeight()) {
          textView.scrollTo(0, offset - textView.getHeight());
       }
-   }
+   }*/
 
    //DONE: Escribir datos en fichero CSV
    private long time;
    private String fileName;
    private FileOutputStream f1, f2;
+
+   public void onClickRecord(View view) {
+      Button button = (Button) view;
+      if (button.getText().equals("Record")) {
+         button.setText("Stop Record");
+         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+         String currentDate = dateFormat.format(new Date());
+         fileName = Environment.getExternalStorageDirectory() + "/" + currentDate;
+         try {
+         f1 = new FileOutputStream(fileName + " raw.csv");
+         f1.write("TIME, D1, D2, D3\n".getBytes());
+         f2 = new FileOutputStream(fileName + " data.csv");
+         f2.write("TIME, SpO2, PR/min, RR/min, PI, ??? \n".getBytes());
+         } catch (FileNotFoundException e) {
+            Log.e(TAG, "ERROR: Abriendo fichero " + e.toString());
+         } catch (IOException e) {
+            Log.e(TAG, "ERROR: Escribiendo fichero " + e.toString());
+         }
+      } else {
+         button.setText("Record");
+         Toast.makeText(this, "File "+fileName+".csv created in internal storage",
+                 Toast.LENGTH_LONG).show();
+         fileName = null;
+         try {
+            if (f1 != null) f1.close();
+            if (f2 != null) f2.close();
+         } catch (IOException e) {
+            Log.e(TAG, "ERROR: Cerrando fichero " + e.toString());
+         }
+      }
+   }
 
    void writeFrames(byte[] data) {
       time = System.currentTimeMillis();
@@ -231,21 +245,10 @@ public class ShowDataActivity extends AppCompatActivity {
    void writeSingleFrame(byte[] data) {
       String s = "" + time;
       try {
-         if (f1 == null || f2 == null) {
-            if (fileName == null) {
-               SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-               String currentDate = dateFormat.format(new Date());
-               fileName = Environment.getExternalStorageDirectory() + "/" + currentDate;
-            }
-            f1 = new FileOutputStream(fileName + " raw.csv");
-            f1.write("TIME, D1, D2, D3\n".getBytes());
-            f2 = new FileOutputStream(fileName + " data.csv");
-            f2.write("TIME, SpO2, PR/min, RR/min, PI, ??? \n".getBytes());
-         }
          if ((data[1] == 6) && (data[2] == -128/*0x80*/)) {
             int unsignedbyte = data[5] & 0xff;
             s += ", " + data[3] + ", " + data[4] + ", " + unsignedbyte + "\n";
-            f1.write(s.getBytes());
+            if (fileName!=null) f1.write(s.getBytes());
             newRawData(data[3], System.currentTimeMillis());
          } else if (data[1] == 11 && (data[2] == -127/*0x81*/)) {
             int spO2 = data[3] & 0xff;
@@ -257,20 +260,18 @@ public class ShowDataActivity extends AppCompatActivity {
             tv_spo2.setText(valueOf(spO2));
             tv_pr.setText(valueOf(pr));
             tv_rr.setText(valueOf(rr));
- //           double d = pi/1000;
-            tv_pi.setText(String.format("%.2f", (0.0+pi)/1000));
-            f2.write(s.getBytes());
+            //           double d = pi/1000;
+            tv_pi.setText(String.format("%.2f", (0.0 + pi) / 1000));
+            if (fileName!=null) f2.write(s.getBytes());
          } else {
-            Log.e("LLL", "ERROR: Trama desconocida");
+            Log.e(TAG, "ERROR: Trama desconocida");
          }
-
       } catch (FileNotFoundException e) {
-         Log.e("LLL", "ERROR: Abriendo fichero " + e.toString());
+         Log.e(TAG, "ERROR: Abriendo fichero " + e.toString());
       } catch (IOException e) {
-         Log.e("LLL", "ERROR: Escribiendo fichero " + e.toString());
+         Log.e(TAG, "ERROR: Escribiendo fichero " + e.toString());
       }
    }
-
 
    @Override
    public void onStop() {
@@ -278,7 +279,7 @@ public class ShowDataActivity extends AppCompatActivity {
          if (f1 != null) f1.close();
          if (f2 != null) f2.close();
       } catch (IOException e) {
-         Log.e("LLL", "ERROR: Cerrando fichero " + e.toString());
+         Log.e(TAG, "ERROR: Cerrando fichero " + e.toString());
       }
       super.onStop();
    }
@@ -289,15 +290,5 @@ public class ShowDataActivity extends AppCompatActivity {
       BleManager.getInstance().disconnectAllDevice();
       BleManager.getInstance().destroy();
    }
-
-/*   public class EjemploView extends View {
-      public EjemploView (Context context) {
-         super(context);
-      }
-      @Override
-      protected void onDraw(Canvas canvas) {
-         //Dibujar aquí
-      }
-   }*/
 
 }
